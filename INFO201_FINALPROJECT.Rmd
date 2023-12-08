@@ -1,0 +1,258 @@
+---
+title: "INFO 201 Final Report"
+author: "Zitao Zhang, Cindy Wang, Aile Ma, Yi Luo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(readr)
+library(caret)
+library(randomForest)
+library(Metrics)
+```
+
+# Introduction
+
+Data science job salaries is an interesting topic due to the dynamic nature of the field. With the recent surge in demand for the skill set and the popularity of big data, more individuals are going into the field. Due to the versatility of big data, we see data science positions in all types of fields, which leads to variability in salary. This is interesting to see because we are also able to see the difference among different fields using a fixed job position. The financial recognition of these skills also reflect broader trends in how industries perceive and prioritize data-driven approaches, giving us insight to the overall economy and how different companies place different levels of emphasis on data scientists.
+
+From media and literature, we know that data science is an extremely competitive job position, and this role is in high demand across various industries, spanning from tech to medical fields. The salary from what we already know is that it is a high paying job, with undergraduates earning more than 100k right out of college as an entry level data scientists. Increasing to more than 200k for senior data scientists or analysts. 
+
+For our project, we are looking for trends in salary and employment rate in various countries, experience levels and job positions. Our questions are as follows: What is the average employment rate for each country for each year, has it been increasing or decreasing? Focusing on major countries such as Canada, Germany, France, Great Britain, Japan, and the United States. Second question is what is the salary distribution in each year by different experience levels? Which are entry-level, junior mid-level, and intermediate senior-level. Our third question is what are the top 20 job positions by average salary in the US? Finally, our last question is what data science job title in US earns most salary.
+
+Over the past year, major corporations like Amazon, Facebook, and Microsoft have undergone significant workforce reductions, resulting in a substantial number of individuals losing their jobs. Consequently, hundreds of thousands of people are now actively seeking new employment opportunities, looking to regain the professional standing they held before these layoffs. In this challenging job market, the awareness of data science job salaries becomes crucial for both job seekers and employers. Having the knowledge of salary ranges helps in negotiating fair compensation and making informed career decisions. From fresh undergraduates to experienced workers, data science roles can vary significantly in terms of responsibilities, required skills, and industry demands. Having access to salary information allows individuals to benchmark their expectations against industry standards, ensuring that they are appropriately compensated for their expertise and experience. On the other hand, for employers, understanding data science job salaries is essential for attracting and retaining top talents in the industry. Having competitive compensation packages are a key factor in attracting skilled professionals in the highly competitive field of data science. Furthermore, knowing the prevailing salary trends allows employers to assess the overall compensation structure within their organizations, ensuring they remain competitive in the market and can retain their current data science talents. Ultimately, having a comprehensive understanding of data science job salaries contributes to a healthy job market, fostering a mutually beneficial relationship between employers and employees in this rapidly evolving field.
+
+
+# Data
+
+We have two data sets that we will merge and perform analysis on. We used these datasets because it best explained our research questions on a global and more comprehensive level. We also merged a data set that was about employment rate since the original data set of employment salary didn’t have that variable and we were interested to see trends related to that as well.
+
+Our first data set on employment salary originated from kaggle which is sourced from ai-jobs.net, a website that gathers data from professionals and employers all over the world. Our second data set on employment rate is from the Organisation for Economic Co-operation and Development (OECD).
+
+The employment salary data set is collected by the ai-jobs.net website, they collect salary information anonymously from professionals and employers. The employment rate data set is collected by the OECD organization as part of the labor market statistics.
+
+The employment salary data set is accessible by anyone either on kaggle or from their website directly, as quoted in their website, their “goal is to have open salary data for everyone”. The employment rate set is accessible directly on their website as well. So there are no restrictions for either data set in terms of accessibility and limits on purposes used.
+
+The first data set, Data Jobs Salaries, is about salary information for specific job titles in the data science field from 2020 to 2022. It has information on the experience level and employment type of the job title, it also has the company’s location, size, remote ratio and employee residence information. The column that we are the most interested in is salary, which is represented in its respective currency and also in USD. The second data set, Employment Rate, defined as a measure of the extent to which available labor resources are being used. It is calculated as the ratio of the employed to the working age population. It includes 43 different countries/regions ranging from the years 2019 to 2023.
+
+There weren’t any data quality issues, however we had trouble joining the two data sets. Since the employment salary had all the rows from 2020-2022, we needed to perform an inner join. But we struggled with data cleaning and renaming of the columns to try to match the two data sets together in order for them to join.
+
+In our final data set, a row represents: for a specific year of a data science job position, with specified employment type and experience level, the company location, employee location, salary, salary currency, salary in usd and remote ratio. 
+
+Also some ethical concerns might be about individual privacy. Data about specific job titles, locations, and salaries could potentially lead to the identification of individuals, especially in smaller companies or specific roles. So it is important to use this data responsibly.
+
+
+Our final data set has 481 observations.
+
+The relevant variables are year, which is a factor with 3 levels (2020, 2021, 2022). Experience level, employment type, job title, and company location are characters. Salary and salary in USD are integers. Finally, the employment rate is a numerical variable.
+
+There aren’t any missing, non-plausible values in our final dataset. Our original data sets didn’t have any quality issues so after merging the data set is very clean and usable.
+
+# Method
+
+We incorporated several key variables from the merged dataset, including year, experience level, employment type, job title, salary, salary currency, salary in USD, employee residence, remote ratio, company location, company size, and yearly average. However, our primary focus centered on the following pivotal variables: year (indicating the year in which the salary was paid), experience level (categorizing the type of employment as PT for Part-time, FT for Full-time, CT for Contract, and FL for Freelance), job title (representing the role held during the respective year), salary (reflecting the total gross salary amount), and yearly average.
+
+These selected data columns were instrumental in addressing our research questions, primarily revolving around salary trends and averages. By analyzing the interplay of year, experience level, job title, and salary, we aimed to gain insights into the dynamics of compensation within our dataset. This streamlined approach allowed us to efficiently explore and comprehend the overarching patterns and tendencies related to salaries in our study.
+
+Aggregation: When confronted with a multitude of salary data associated with a single job title (for example, the second question researched the salary distribution by year and experience level), the challenge arises in comparing these salaries with those of other job titles. To overcome this hurdle, our initial step involved computing the average salary for each specific job title across different experience levels. This approach allowed us to establish a more representative and manageable benchmark for comparison. Subsequently, we analyzed the trends over the years, providing a nuanced understanding of how salaries within each job title fluctuate based on experience levels. By employing this method, we aimed to discern meaningful patterns in compensation dynamics over time, enhancing the precision of our comparative analysis across various job titles.
+
+Categorization: During the data merging process, we encountered a common column named country/location in both datasets. Notably, we observed a discrepancy in the naming conventions, with one dataset using 'United States' and the other employing 'US.' To address this inconsistency, we initiated a categorization step, unifying the representations of the country names. By standardizing this variable, we ensured coherence in our dataset. Subsequently, we proceeded with our research, leveraging the categorized country names for a more cohesive and accurate analysis 
+In the process of sample selection, we employed a systematic approach aligned with the objectives of our study. The criteria for inclusion were carefully defined to ensure the sample's representativeness and relevance to our research questions. Factors considered included [list specific criteria such as job title, experience level, time frame, etc.]. The dataset was then filtered based on these criteria to create a sample that accurately reflected the population of interest.
+
+The two dataset and the merged dataset are all well originated. And we checked there are no missing values on each column.
+
+In this project we utilize a random forest model to do the linear regression. As in our data, we have continuous variable salary and categorical variable job title. Then we need to factorize all the job titles and then do a data split. In the process we notice that different countries may have different job titles and categories, so we decide to filter data for all US job titles. However, such a process means a smaller dataset as our data is already small. But we still choose to select the US for a conservative conclusion.
+
+Some trade-offs we faced while making these above decision were, since we mostly interested in looking at salary and employment rate, many variables that didn't quite relate to salary weren't used, although they are worth exploring under different circumstances. Nonetheless, our choices for our methods adequately answered our question relating to salary and employment rate, so our decisions were appropriate for this research.
+
+# Result
+
+### Data process
+
+```{r}
+# first dataset
+emprate <- read.csv("emp_rate.csv")
+emprate <- emprate %>% select(LOCATION, TIME, Value)
+
+year <- c()
+for (x in 1:nrow(emprate)) {
+  year[x] = as.numeric(substring(emprate$TIME[x],1,4))
+}
+
+emprate$year = year
+emprate <- emprate %>% select(LOCATION, year, Value)
+emprate <- emprate %>% group_by(LOCATION, year) %>% summarise(employment_rate = mean(Value), .groups = "keep")
+emprate <- emprate %>% filter(year == 2020 | year == 2021 | year == 2022)
+
+emprate <- emprate %>% filter(LOCATION %in% c("CAN", "FRA", "USA", "DEU", "JPN", "GBR"))
+
+emprate$LOCATION[emprate$LOCATION == "CAN"] <- "CA"
+emprate$LOCATION[emprate$LOCATION == "FRA"] <- "FR"
+emprate$LOCATION[emprate$LOCATION == "USA"] <- "US"
+emprate$LOCATION[emprate$LOCATION == "DEU"] <- "DE"
+emprate$LOCATION[emprate$LOCATION == "JPN"] <- "JP"
+emprate$LOCATION[emprate$LOCATION == "GBR"] <- "GB"
+
+colnames(emprate)[1] <- "company_location"
+
+# second dataset
+df1 <- read.csv("ds_salaries.csv")
+df1 <- df1 %>% filter(df1$company_location %in% c("CA", "FR", "US", "JP", "DE", "GB"))
+df1 <- df1 %>% rename(year = work_year)
+
+df2 <- emprate
+
+merged_df <- df1 %>% inner_join(df2, by = c('company_location', 'year'))
+
+#one new continuous/numerical variable
+merged_df <- merged_df %>% mutate(salary_range = salary_in_usd %/% 10000 * 10000) 
+
+#one new categorical variable
+merged_df$remotegroup <- as.factor(ifelse(merged_df$remote_ratio==0, 'In Person', 
+                        ifelse(merged_df$remote_ratio==50, 'Hybrid', 
+                        ifelse(merged_df$remote_ratio==100, 'Remote', '')))) 
+
+#summarization datafram
+summary <- merged_df %>% select(year, job_title, salary_in_usd, employment_rate)
+
+write.csv(merged_df, "/Users/cinnddyy/Desktop/Final.csv", row.names=FALSE)
+```
+
+### What is the average employment rate in different countries in different years?
+
+```{r}
+emp <- merged_df
+emp$year <- as.factor(emp$year)
+
+ggplot(emp, aes(x = company_location, y = employment_rate, fill = year)) +
+  # Implement a grouped bar chart
+  geom_bar(position = "dodge", stat = "identity") +
+  ylim(0, 100) +
+  labs(title = "Average Employment Rate for Each Country for each Year", x = "Country", y = "Average Employment Rate") +
+  scale_fill_manual(values = c("#4682B4", "#B4464B", "#B4AF46")) +
+  scale_x_discrete(labels=c("CA" = "Canada","DE" = "Germany","FR" = "France","GB"="Great Britain","JP"="Japan","US"="United States")) +
+  theme_minimal()
+```
+
+For this bar chart, I used a horizontally stacked bar chart to represent the average employment rate for six countries spanning from 2020 to 2021. The countries I chose are Canada, Germany, France, Great Britain, Japan, and the United States. Reason is that these countries all have large technology companies and would represent our goal to find employment rate patterns the best. From the plot we can see that for each country besides Great Britain, the employment rate increased from 2020 to 2022.
+
+### What is the average salary for data science jobs with different experience levels?
+
+```{r, warning=FALSE}
+merged_data <- merged_df
+
+data_long <- merged_data %>%
+  select(year,experience_level,job_title,salary_in_usd) %>%
+  filter(job_title == "Data Scientist") %>%
+  group_by(experience_level,year) %>%
+  summarise(ave_salary = mean(salary_in_usd), .groups = "keep")
+
+ggplot(data = data_long) +
+  aes(x = as.factor(year), y = ave_salary, fill = experience_level) +
+  geom_histogram(stat = "identity", position = "dodge", alpha = 0.7) +
+  geom_text(aes(label = round(ave_salary, 2)), position = position_dodge(width = 0.9), vjust = -0.5, size=3) +
+  facet_wrap(~experience_level) +
+  labs(x = "Year", y = "Salary", title = "Salary Distribution by Year and Experience Level")
+```
+
+In the chart "Average salary for data science jobs with different experience levels," different experience levels are represented by different colors: Entry-level / Junior in red, Mid-level / Intermediate in green, and Senior-level / Expert in blue. The x-axis represents each year (from 2020 to 2022), and the y-axis represents the average annual salary for each experience level. It's worth noting that the changes in average annual salaries over the past three years vary for different experience levels. For Entry-level / Junior, the average annual salary in 2021 is higher than the other two years, and 2022 is the lowest. For Mid-level / Intermediate, the average salary is gradually increasing slowly. In contrast, for Senior-level / Expert, the average salary was highest in 2020, and lowest in 2021, and each year the Senior-level / Expert's average salary is higher than the other two levels.
+
+### What are the job titles that earn salaries in the United States?
+
+```{r, warning=FALSE}
+us_data <- merged_df[merged_df$company_location == "US", ]
+
+us_data %>%
+  group_by(job_title) %>%
+  summarise(ave_salary = mean(salary_in_usd, na.rm=TRUE))%>%
+  arrange((desc(ave_salary))) %>%
+  mutate(top_three = ifelse(row_number() <= 3, "Top 3", "Others")) %>%
+  head(20) %>%
+  ggplot(aes(x=job_title,y=ave_salary, fill = top_three))+
+  geom_histogram(stat = "identity",width=0.7)+
+  labs(x = "Job Title", y = "Average Salary", title = "Top 20 Job Titles by Average Salary in the US") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(labels = scales::comma)+
+  guides(fill = guide_legend(title = NULL))
+```
+
+For this analysis, we initially computed the average salaries for various job titles over a three-year period. The findings unveiled the top three positions in terms of earnings: Data Analytics Lead, boasting an average salary of $400,000 per year; Principal Data Engineer, averaging around $325,000; and Director of Data Science, commanding an average annual salary of approximately $280,000. Notably, we observed that the average salaries within the realm of data science consistently exceeded $175,000, underscoring the lucrative nature of careers in this field.
+
+### What data science job title in US earns the most salary?
+
+```{r}
+df <- merged_df
+df_ml <- df %>% filter(df$company_location == "US") %>% select(experience_level, employment_type, job_title, salary_in_usd) %>% na.omit()
+
+df_ml$experience_level <- as.factor(df_ml$experience_level)
+df_ml$employment_type <- as.factor(df_ml$employment_type)
+df_ml$job_title <- as.factor(df_ml$job_title)
+
+set.seed(201)
+training_rows <- createDataPartition(df_ml$salary_in_usd, p = 0.8, list = FALSE)
+training_data <- df_ml[training_rows, ]
+testing_data <- df_ml[-training_rows, ]
+
+model <- randomForest(salary_in_usd ~ ., data = training_data, ntree = 1000)
+predictions <- predict(model, testing_data)
+rmse <- sqrt(mean((predictions - testing_data$salary_in_usd)^2))
+
+mae <- mae(testing_data$salary_in_usd, predictions)
+r2 <- cor(testing_data$salary_in_usd, predictions)^2
+mape <- mape(testing_data$salary_in_usd, predictions)
+
+Name <- c("RMSE:", "MAE:", "R2:","MAPE:")
+Value <- c(rmse,mae,r2,mape)
+knitr::kable(cbind(Name, Value))
+
+testing_data$predicted_salary <- predictions
+average_predictions <- testing_data %>% 
+    group_by(job_title) %>% 
+    summarise(average_predicted_salary = mean(predicted_salary))
+
+rank <- average_predictions %>% arrange(desc(average_predicted_salary))
+knitr::kable(rank)
+```
+
+For the machine learning part, we first initialize our research range to the US since different countries may have different job titles. Then we split the data 80% for training data and 20% for test data. In this project we choose a random forest to do the linear regression since we have continuous variable salary and categorical variable job title. After factoring the job title variable, then we can use the random forest model to predict the result. After testing the model, we generate some measurements to see the accuracy of our model. However, the result is not that good. We get a root mean square error of 70,000 which is quite big in our data. And the mean absolute percentage error is 39% is also quite large. We guess this is because our dataset is not big enough to do accurate predictions. But to some extent, our prediction is within the logic. In the result, rank 1st is applied data scientist, and second is the financial data analyst with around 220,000 and 200,000 dollars. Rank last is the computer vision software engineer with 110,000 dollars.
+
+
+# Discussion
+
+To understand the impact and trends of recent economic developments on the labor market, we collected and analyzed the average employment rates of six countries from three continents over the past three years. These countries include Canada, Germany, France, the United Kingdom, Japan, and the United States. Canada's employment rate from 2020 to 2022 seems to have steadily increased, seemingly unaffected by the COVID-19 pandemic. The average employment rate increased by approximately 5% from 2020 to 2021 and continued to rise by about 4% from 2021 to 2022. Canada's noticeable increase in the average employment rate stands out among these six countries. Germany also experienced a slow but steady increase in the average employment rate over the past three years. Similarly, France has seen a gradual rise in the average employment rate, but it has consistently remained the lowest among these six countries over the past three years. In the case of the United Kingdom, the average employment rate ranked second among these six countries in 2020. However, unexpectedly, it slightly decreased in 2021, making it the only country among the six to experience a decline in the average employment rate over the past three years. Japan's average employment rate was available only from 2020 to 2021. Notably, Japan had the highest average employment rate among these six countries and has been gradually increasing. Similarly, the United States also witnessed an upward trend in the average employment rate, showing a significant increase akin to Canada's. 
+
+A significant limitation in our analysis is the relatively small timespan, as we only have data for the past three years. Therefore, we cannot ascertain the peak average employment rates of these countries or the historical average rates over the years. This limitation prevents us from conclusively depicting each country's true and regular employment rates or distinguishing whether a country is currently in an upward phase or a post-pandemic recovery phase in terms of employment rates.For future analysis, we might require data from a more extended period and records starting from this year onward. Moreover, we aim to gather more external factors influencing the labor market, including economic and political factors.
+
+Taking a global perspective, we narrowed our focus to the field of data science to analyze the annual average income of employees at different experience levels over the past three years. The leftmost side of the graph, represented in red, indicates Entry-level / Junior positions. From 2020 to 2021, there was a noticeable increase in the average salary for entry-level employees. However, by 2022, the average salary for Entry-level employees dropped to a level even lower than that of 2020. For Mid-level employees, their salaries increased from an average annual salary of $86,585 in 2020 to $94,798 in 2021, and further to $105,319 afterward, demonstrating a steady growth in the average annual salary for Mid-level employees.
+
+Finally, the graph's rightmost side illustrates an unusual variation in the average annual salary for Senior-level / Expert roles. In 2020, the average annual salary for Senior-level positions was notably high at $200,142. However, it drastically declined to $103,717 in 2021 and rose again to $159,941 in 2022. Nevertheless, across all years, the average annual salary for Senior-level positions remained higher than that of Mid-level and Entry-level positions.
+
+The primary limitation of our graph is that the average annual salary depicted includes all job titles corresponding to each experience level. This poses a significant issue as different job titles within the same experience level may result in vast discrepancies in annual salaries. For instance, the substantial decline in the average annual salary for Senior-level positions in 2021 might be due to several factors. It could be attributed to newly promoted Entry-level employees receiving lower salaries than their predecessors, coupled with retirements of senior employees leading to a rapid overall decline in the average annual salary. Moreover, it could also stem from specific job titles within the Senior-level category introduced in 2021, paying significantly less than other job titles. These reasons remain uncertain.
+
+Therefore, for our future work, we may need to differentiate experience levels precisely among individual job titles and consider factors that could potentially mislead our analysis.
+
+Narrowing our focus to the data science industry within the United States, considering the diverse range of job titles in this field, we calculated the average salary for each job title. The top 20 job titles based on average salary were included in the chart. Notably, among the top 20 high-income job titles, none reported an average annual salary below $150,000 nationwide. In the chart, we highlighted the top three job titles among the top 20 in blue. Leading the list is 'Data Analytics Lead' with an average annual salary of around $400,000, ranking as the highest-paid job title. The second-highest average annual income belongs to 'Principal Data Engineer' at approximately $330,000. Following closely is 'Director of Data Science' with an average annual salary of $280,000, securing the third position.
+
+However, there are evident limitations in this chart. Our target audience comprises data science graduates seeking employment opportunities. While the top 20 job titles in this chart boast respectable salaries, most positions entail roles such as leads, managers, directors, etc. These positions typically require substantial work experience, making it challenging for freshly graduated students to secure these roles directly. Hence, while this chart provides valuable insights for our target audience to understand the industry, it might not serve as a significant reference for the average salary they can expect right after graduation. 
+
+For our future work, it is crucial to analyze and interpret more entry-level positions, considering our audience comprises graduates. Additionally, presenting data on the number of graduates and the quantity of each position in the future can offer better insights into industry labor demands. Analyzing salaries, requirements, and quantities of various data science job titles in different countries could also be beneficial.
+
+As historical data can only serve as a reference, our primary goal is to provide our audience with insights into future scenarios. Therefore, we collected and cleaned data to train a random forest model for predicting the expected income for each job title in the future (2024). Subsequently, we presented the top 20 high-income job titles predicted by our model in tabular form. The left column of the table lists various job titles, while the right column showcases the incomes projected by our model. 
+
+Topping the list is 'Applied Data Scientist' ($226,805.7 USD), followed by 'Financial Data Analyst' ($203,950.2 USD) in second place, and 'Applied Machine Learning Scientist' ($195,538.3 USD) in third place. The 20th position is secured by 'Computer Vision Software Engineer' ($110,653.6 USD).
+
+However, our model exhibits limitations, indicated by its RMSE of 76964, MAE of 48176, R² of 0.17, and MAPE of 0.3937. Lower RMSE and MAE values are desirable, while R² should approach 1, and MAPE should ideally approach 0. Hence, the accuracy of our machine learning model might not be high enough for complete reliance; it serves as a reference but may not be entirely dependable. 
+
+For our future work, we aim to seek more data, augment data features to enhance our model, and experiment with different models like XGBoost to improve the accuracy of our predictions.
+
+# Summary and Conclusion
+
+Over the past three years, the global economy has grappled with the profound impact of the COVID-19 pandemic, resulting in a significant downturn in employment rates across various countries. Notably, the data science industry faced challenges as tech companies implemented downsizing and salary cuts during the pandemic, leading to an overall decrease in average industry compensation. However, with the gradual subsiding of the pandemic, signs of recovery are becoming evident, especially in countries like Canada, Germany, Japan, and the United States, where employment rates are steadily rebounding.
+
+In the realm of data science, work experience emerges as a pivotal factor influencing salary differentials. Senior-level professionals command substantially higher earnings compared to their entry or mid-level counterparts. Interestingly, as the lingering effects of COVID-19 recede, there is a discernible upward trend in average salaries within the same job levels. While variations exist in income levels based on specific job titles, the overall compensation in the data science industry is generally commendable.
+
+Although the top 20 job titles predominantly represent senior-level positions, potentially offering limited reference for recent graduates, our data remains valuable in providing insights into future prospects. Recognizing the significance of choosing a promising job title, our predictive model, while not entirely precise, serves as a valuable reference point. It forecasts expected salaries for entry-level positions, aiding our target audience in gaining familiarity with intriguing job titles within the evolving landscape of the data science industry.
+In the United States, data science stands out as a lucrative career path, witnessing a consistent annual increase in salaries across diverse experience levels. The field's sustained growth and high demand contribute to its allure as a financially rewarding profession, making it an attractive choice for individuals seeking both professional fulfillment and economic prosperity.
+
